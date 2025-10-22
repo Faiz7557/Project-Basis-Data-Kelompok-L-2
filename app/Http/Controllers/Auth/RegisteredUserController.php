@@ -1,0 +1,38 @@
+<?php
+namespace App\Http\Controllers\Auth;
+
+use App\Http\Controllers\Controller;
+use App\Models\User;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules;
+use Illuminate\View\View;
+
+class RegisteredUserController extends Controller
+{
+    public function create(): View { return view('auth.register'); }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'nama' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'peran' => ['required', 'string', 'in:petani,pengepul,distributor'], // Validasi untuk peran
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ]);
+
+        $user = User::create([
+            'nama' => $request->nama,
+            'email' => $request->email,
+            'peran' => $request->peran, // Menyimpan peran
+            'password' => Hash::make($request->password),
+        ]);
+
+        event(new Registered($user));
+        Auth::login($user);
+        return redirect('/app/dashboard');
+    }
+}

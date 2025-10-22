@@ -1,0 +1,186 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Negosiasi;
+use App\Models\ProdukBeras;
+use App\Models\User;
+use App\Models\Transaksi;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+
+class NegosiasiController extends Controller
+{
+    public function index()
+    {
+        $user = Auth::user();
+        
+        if ($user->peran === 'petani') {
+            // Petani melihat negosiasi yang masuk
+            $negosiasi = Negosiasi::with(['produk', 'pengepul'])
+                ->where('id_petani', $user->id_user)
+                ->orderBy('created_at', 'desc')
+                ->paginate(10);
+        } else {
+            // Pengepul melihat negosiasi yang diajukan
+            $negosiasi = Negosiasi::with(['produk', 'petani'])
+                ->where('id_pengepul', $user->id_user)
+                ->orderBy('created_at', 'desc')
+                ->paginate(10);
+        }
+
+        // kirim ke view dengan nama $negotiations
+        return view('negosiasi.index', [
+            'negotiations' => $negosiasi
+        ]);
+    }
+    
+    public function create(ProdukBeras $produk)
+    {
+        // Hanya pengepul yang bisa melakukan negosiasi
+        if (Auth::user()->peran !== 'pengepul') {
+            return redirect()->route('pasar.show', $produk)
+                ->with('error', 'Hanya pengepul yang dapat melakukan negosiasi');
+        }
+        
+        return view('negosiasi.create', compact('produk'));
+    }
+    
+    public function store(Request $request, ProdukBeras $produk)
+    {
+        // Validasi request
+        $request->validate([
+            'harga_penawaran' => 'required|numeric|min:1',
+            'jumlah_kg' => 'required|integer|min:1|max:' . $produk->stok_kg,
+            'pesan' => 'nullable|string',
+        ]);
+        
+        // Buat negosiasi baru
+        Negosiasi::create([
+            'id_produk' => $produk->id,
+            'id_pengepul' => Auth::id(),
+            'id_petani' => $produk->id_petani,
+            'harga_penawaran' => $request->harga_penawaran,
+            'harga_awal' => $produk->harga_per_kg,
+            'jumlah_kg' => $request->jumlah_kg,
+            'pesan' => $request->pesan,
+            'status' => 'dalam_proses',
+        ]);
+        
+        return redirect()->route('negosiasi.index')
+            ->with('success', 'Penawaran berhasil diajukan');
+    }
+    
+    public function show(Negosiasi $negosiasi)
+    {
+        $negosiasi->load(['produk', 'petani', 'pengepul']);
+        
+        // Cek apakah user adalah pihak dalam negosiasi
+        $user = Auth::user();
+        if ($user->id_user !== $negosiasi->id_petani && $user->id_user !== $negosiasi->id_pengepul) {
+            return redirect()->route('negosiasi.index')
+                ->with('error', 'Anda tidak memiliki akses untuk melihat negosiasi ini');
+        }
+        
+        return view('negosiasi.show', compact('negosiasi'));
+    }
+    
+    public function accept(Negosiasi $negosiasi)
+    {
+        // Hanya petani yang bisa menerima negosiasi
+        if (Auth::id() !== $negosiasi->id_petani) {
+            return redirect()->route('negosiasi.index')
+                ->with('error', 'Hanya petani yang dapat menerima negosiasi');
+        }
+        
+        // Cek status negosiasi
+        if ($negosiasi->status !== 'dalam_proses') {
+            return redirect()->route('negosiasi.show', $negosiasi)
+                ->with('error', 'Negosiasi ini sudah tidak dalam proses');
+        }
+        
+        // Cek stok produk
+        $produk = $negosiasi->produk;
+        if ($produk->stok_kg < $negosiasi->jumlah_kg) {
+            return redirect()->route('negosiasi.show', $negosiasi)
+                ->with('error', 'Stok produk tidak mencukupi');
+        }
+        
+        DB::beginTransaction();
+        try {
+            // Update status negosiasi
+            $negosiasi->update(['status' => 'diterima']);
+            
+            // Kurangi stok produk
+            $produk->update(['stok_kg' => $produk->stok_kg - $negosiasi->jumlah_kg]);
+            
+            // Buat transaksi
+            Transaksi::create([
+                'id_pembeli' => $negosiasi->id_pengepul,
+                'id_penjual' => $negosiasi->id_petani,
+                'id_produk' => $negosiasi->id_produk,
+                'jumlah' => $negosiasi->jumlah_kg,
+                'harga_satuan' => $negosiasi->harga_penawaran,
+                'total_harga' => $negosiasi->harga_penawaran * $negosiasi->jumlah_kg,
+                'status_transaksi' => 'menunggu_pembayaran',
+                'type' => 'purchase',
+                'description' => 'Pembelian produk melalui negosiasi',
+            ]);
+            
+            DB::commit();
+            
+            return redirect()->route('negosiasi.show', $negosiasi)
+                ->with('success', 'Negosiasi berhasil diterima');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->route('negosiasi.show', $negosiasi)
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+    
+    public function reject(Negosiasi $negosiasi)
+    {
+        // Hanya petani yang bisa menolak negosiasi
+        if (Auth::id() !== $negosiasi->id_petani) {
+            return redirect()->route('negosiasi.index')
+                ->with('error', 'Hanya petani yang dapat menolak negosiasi');
+        }
+        
+        // Cek status negosiasi
+        if ($negosiasi->status !== 'dalam_proses') {
+            return redirect()->route('negosiasi.show', $negosiasi)
+                ->with('error', 'Negosiasi ini sudah tidak dalam proses');
+        }
+        
+        // Update status negosiasi
+        $negosiasi->update(['status' => 'ditolak']);
+        
+        return redirect()->route('negosiasi.show', $negosiasi)
+            ->with('success', 'Negosiasi ditolak');
+    }
+    
+    public function counterOffer(Request $request, Negosiasi $negosiasi)
+    {
+        // Validasi request
+        $request->validate([
+            'harga_penawaran' => 'required|numeric|min:1',
+            'pesan' => 'nullable|string',
+        ]);
+        
+        // Cek status negosiasi
+        if ($negosiasi->status !== 'dalam_proses') {
+            return redirect()->route('negosiasi.show', $negosiasi)
+                ->with('error', 'Negosiasi ini sudah tidak dalam proses');
+        }
+        
+        // Update negosiasi dengan penawaran baru
+        $negosiasi->update([
+            'harga_penawaran' => $request->harga_penawaran,
+            'pesan' => $request->pesan,
+        ]);
+        
+        return redirect()->route('negosiasi.show', $negosiasi)
+            ->with('success', 'Penawaran balik berhasil diajukan');
+    }
+}
