@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ProdukBeras;
 use App\Models\Transaksi;
+use App\Models\TransaksiHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -69,35 +70,59 @@ class MarketController extends Controller
 
             DB::beginTransaction();
 
-            $buyerId = Auth::user()->id_user;
+            $buyer = Auth::user();
+            $buyerId = $buyer->id_user;
             $sellerId = $product->id_user;
             $jumlah = (int) $request->input('jumlah');
             $hargaSatuan = (float) $product->harga;
+            $total = $hargaSatuan * $jumlah;
+
+            if ((float) ($buyer->saldo ?? 0) < $total) {
+                throw new \RuntimeException('Saldo tidak mencukupi untuk melakukan pembelian ini');
+            }
 
             $trx = Transaksi::create([
                 'id_penjual' => $sellerId,
                 'id_pembeli' => $buyerId,
+                'id_produk' => $product->id_produk,
                 'jumlah' => $jumlah,
                 'harga_awalan' => $hargaSatuan,
                 'harga_akhir' => $hargaSatuan,
                 'tanggal' => now()->toDateString(),
-                'jenis_transaksi' => 'market_purchase',
+                'jenis_transaksi' => 'beli',
                 'status_transaksi' => 'menunggu_pembayaran',
                 'type' => 'purchase',
-                'description' => 'Pembelian langsung produk beras',
+                'description' => 'Pembelian langsung produk beras: '.$product->nama_produk,
                 'user_id' => $buyerId,
             ]);
 
-            $product->decrement('stok', $jumlah);
+            \App\Models\Expenditure::create([
+                'user_id' => $buyerId,
+                'amount' => $total,
+                'description' => 'Hold transaksi #'.$trx->id_transaksi,
+                'date' => now()->toDateString(),
+                'status' => 'pending',
+            ]);
+
+            $buyer->saldo = (float) $buyer->saldo - $total; // hold saldo
+            $buyer->save();
+
+            TransaksiHistory::create([
+                'id_transaksi' => $trx->id_transaksi,
+                'status_before' => null,
+                'status_after' => 'menunggu_pembayaran',
+                'changed_by' => $buyerId,
+                'note' => 'Pembelian dibuat, saldo buyer di-hold',
+            ]);
 
             DB::commit();
 
-            return redirect()->route('market.show', $product->id_produk)
-                ->with('status', 'Pembelian berhasil dibuat, menunggu konfirmasi!');
+            return redirect()->route('market.show', ['market' => $product->id_produk])
+                ->with('status', 'Pembelian berhasil dibuat, menunggu konfirmasi penjual');
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('Market buy error: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            return redirect()->route('market.index')->with('error', 'Gagal membuat pembelian: '.$e->getMessage());
+            return redirect()->route('market.show', ['market' => $market->id_produk])->with('error', 'Gagal membuat pembelian: '.$e->getMessage());
         }
     }
 
@@ -144,7 +169,7 @@ class MarketController extends Controller
 
             DB::commit();
 
-            return redirect()->route('market.show', $product->id_produk)
+            return redirect()->route('market.show', ['market' => $product->id_produk])
                 ->with('status', 'Tawaran negosiasi telah dikirim dan sedang diproses');
         } catch (\Throwable $e) {
             DB::rollBack();

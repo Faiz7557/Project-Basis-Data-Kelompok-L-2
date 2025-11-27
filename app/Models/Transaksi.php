@@ -23,6 +23,7 @@ class Transaksi extends Model
     protected $fillable = [
         'id_penjual',
         'id_pembeli',
+        'id_produk',
         'id_pasar',
         'id_wallet',
         'jumlah',

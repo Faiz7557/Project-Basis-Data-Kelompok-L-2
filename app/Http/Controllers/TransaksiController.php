@@ -56,46 +56,90 @@ class TransaksiController extends Controller
 
     public function approve(Transaksi $transaksi)
     {
-        $user = Auth::user();
-        if ($transaksi->id_penjual !== $user->id_user) {
-            abort(403);
+        $seller = Auth::user();
+        if ($transaksi->id_penjual !== $seller->id_user) { abort(403); }
+
+        DB::beginTransaction();
+        try {
+            $before = $transaksi->status_transaksi;
+            $total = (float) ($transaksi->harga_akhir ?? $transaksi->harga_awalan ?? 0) * (int) ($transaksi->jumlah ?? 0);
+
+            $seller->saldo = (float) ($seller->saldo ?? 0) + $total;
+            $seller->save();
+
+            if ($transaksi->id_produk) {
+                $product = \App\Models\ProdukBeras::find($transaksi->id_produk);
+                if ($product) {
+                    $qty = (int) $transaksi->jumlah;
+                    if ($product->stok < $qty) { throw new \RuntimeException('Stok tidak mencukupi untuk menyetujui transaksi'); }
+                    $product->decrement('stok', $qty);
+                }
+            }
+
+            $transaksi->status_transaksi = 'disetujui';
+            $transaksi->save();
+
+            \App\Models\Expenditure::where('user_id', $transaksi->id_pembeli)
+                ->where('status', 'pending')
+                ->where('description', 'like', 'Hold transaksi #'.$transaksi->id_transaksi.'%')
+                ->update(['status' => 'completed']);
+
+            TransaksiHistory::create([
+                'id_transaksi' => $transaksi->id_transaksi,
+                'status_before' => $before,
+                'status_after' => 'disetujui',
+                'changed_by' => $seller->id_user,
+                'note' => 'Transaksi disetujui, saldo seller bertambah dan stok berkurang',
+            ]);
+
+            DB::commit();
+            return back()->with('success', 'Transaksi disetujui');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Approve transaksi error: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return back()->with('error', 'Gagal menyetujui transaksi: '.$e->getMessage());
         }
-
-        $before = $transaksi->status_transaksi;
-        $transaksi->status_transaksi = 'disetujui';
-        $transaksi->save();
-
-        TransaksiHistory::create([
-            'id_transaksi' => $transaksi->id_transaksi,
-            'status_before' => $before,
-            'status_after' => 'disetujui',
-            'changed_by' => $user->id_user,
-            'note' => 'Transaksi disetujui oleh petani',
-        ]);
-
-        return back()->with('success', 'Transaksi disetujui');
     }
 
     public function reject(Transaksi $transaksi)
     {
-        $user = Auth::user();
-        if ($transaksi->id_penjual !== $user->id_user) {
-            abort(403);
+        $seller = Auth::user();
+        if ($transaksi->id_penjual !== $seller->id_user) { abort(403); }
+
+        DB::beginTransaction();
+        try {
+            $before = $transaksi->status_transaksi;
+            $total = (float) ($transaksi->harga_akhir ?? $transaksi->harga_awalan ?? 0) * (int) ($transaksi->jumlah ?? 0);
+
+            $buyer = \App\Models\User::find($transaksi->id_pembeli);
+            if ($buyer) {
+                $buyer->saldo = (float) ($buyer->saldo ?? 0) + $total; // release hold
+                $buyer->save();
+            }
+
+            \App\Models\Expenditure::where('user_id', $transaksi->id_pembeli)
+                ->where('status', 'pending')
+                ->where('description', 'like', 'Hold transaksi #'.$transaksi->id_transaksi.'%')
+                ->update(['status' => 'completed', 'description' => 'Hold dirilis transaksi #'.$transaksi->id_transaksi]);
+
+            $transaksi->status_transaksi = 'ditolak';
+            $transaksi->save();
+
+            TransaksiHistory::create([
+                'id_transaksi' => $transaksi->id_transaksi,
+                'status_before' => $before,
+                'status_after' => 'ditolak',
+                'changed_by' => $seller->id_user,
+                'note' => 'Transaksi ditolak, saldo buyer dikembalikan',
+            ]);
+
+            DB::commit();
+            return back()->with('success', 'Transaksi ditolak');
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Reject transaksi error: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return back()->with('error', 'Gagal menolak transaksi: '.$e->getMessage());
         }
-
-        $before = $transaksi->status_transaksi;
-        $transaksi->status_transaksi = 'ditolak';
-        $transaksi->save();
-
-        TransaksiHistory::create([
-            'id_transaksi' => $transaksi->id_transaksi,
-            'status_before' => $before,
-            'status_after' => 'ditolak',
-            'changed_by' => $user->id_user,
-            'note' => 'Transaksi ditolak oleh petani',
-        ]);
-
-        return back()->with('success', 'Transaksi ditolak');
     }
 
     public function history(Transaksi $transaksi)
@@ -141,6 +185,20 @@ class TransaksiController extends Controller
 
         $items = collect();
         if (($user->peran ?? null) === 'petani') {
+            $recentPurchases = Transaksi::where('id_penjual', $user->id_user)
+                ->where('status_transaksi', 'menunggu_pembayaran')
+                ->orderByDesc('created_at')
+                ->limit(10)
+                ->get(['jumlah','harga_akhir','harga_awalan','created_at'])
+                ->map(function ($t) {
+                    $price = (float) ($t->harga_akhir ?? $t->harga_awalan ?? 0);
+                    return [
+                        'type' => 'pembelian',
+                        'message' => 'Pembeli baru: '.(int)$t->jumlah.' kg @ Rp '.number_format($price,0,',','.'),
+                        'created_at' => $t->created_at,
+                    ];
+                });
+
             $recentNegotiations = DB::table('negosiasi_hargas')
                 ->join('transaksis', 'negosiasi_hargas.id_transaksi', '=', 'transaksis.id_transaksi')
                 ->where('transaksis.id_penjual', $user->id_user)
@@ -174,7 +232,7 @@ class TransaksiController extends Controller
                     ];
                 });
 
-            $items = $recentNegotiations->concat($statusUpdates)->sortByDesc('created_at')->values();
+            $items = $recentPurchases->concat($recentNegotiations)->concat($statusUpdates)->sortByDesc('created_at')->values();
         } else {
             $statusUpdates = TransaksiHistory::whereHas('transaksi', function ($q) use ($user) {
                     $q->where('id_pembeli', $user->id_user);
