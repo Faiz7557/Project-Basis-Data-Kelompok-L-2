@@ -49,7 +49,7 @@ class MarketController extends Controller
             'stok' => $request->stok,
             'nama_petani' => $request->nama_petani,
             'lokasi_gudang' => $request->lokasi_gudang,
-            'id_user' => auth()->id(), // Asumsi produk dibuat oleh user yang sedang login
+            'id_petani' => auth()->id(), // Asumsi produk dibuat oleh user yang sedang login
         ]);
 
         return redirect()->route('market.index')->with('success', 'Produk berhasil ditambahkan!');
@@ -72,7 +72,7 @@ class MarketController extends Controller
 
             $buyer = Auth::user();
             $buyerId = $buyer->id_user;
-            $sellerId = $product->id_user;
+            $sellerId = $product->id_petani;
             $jumlah = (int) $request->input('jumlah');
             $hargaSatuan = (float) $product->harga;
             $total = $hargaSatuan * $jumlah;
@@ -139,7 +139,7 @@ class MarketController extends Controller
             DB::beginTransaction();
 
             $buyerId = Auth::user()->id_user;
-            $sellerId = $product->id_user;
+            $sellerId = $product->id_petani;
             $jumlah = (int) ($request->input('jumlah') ?? 0);
             $offer = (float) $request->input('tawaran_harga');
             $message = (string) $request->input('pesan', '');
