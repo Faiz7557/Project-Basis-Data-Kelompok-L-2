@@ -1,5 +1,5 @@
 <?php
-
+// ini faizs
 use Illuminate\Support\Facades\Route;
 // ini punya adi
 // Controller dari Breeze
