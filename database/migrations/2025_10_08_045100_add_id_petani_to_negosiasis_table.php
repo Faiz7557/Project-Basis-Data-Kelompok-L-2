@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::table('negosiasis', function (Blueprint $table) {
             // PERBAIKAN DI SINI: Cek dulu apakah kolom sudah ada
             if (!Schema::hasColumn('negosiasis', 'id_petani')) {
-                $table->foreignId('id_petani')->constrained('users')->onDelete('cascade');
+                // FIXED: id_petani references id_user on users table
+                $table->foreignId('id_petani')->constrained('users', 'id_user')->onDelete('cascade');
             }
         });
     }

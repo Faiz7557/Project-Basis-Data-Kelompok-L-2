@@ -44,12 +44,13 @@ class ProductController extends Controller
 
         ProdukBeras::create([
             'nama_produk' => $request->nama_produk,
-            'varietas' => $request->varietas,
+            'jenis_beras' => $request->varietas,
             'kualitas' => $request->kualitas,
-            'harga_per_kg' => $request->harga_per_kg,
+            'harga' => $request->harga_per_kg,
             'id_petani' => $request->id_petani,
+            'nama_petani' => User::find($request->id_petani)->nama ?? 'Unknown',
             'lokasi_gudang' => $request->lokasi_gudang,
-            'stok_kg' => $request->stok_kg,
+            'stok' => $request->stok_kg,
             'deskripsi' => $request->deskripsi,
             'foto' => $fotoPath,
         ]);
@@ -89,12 +90,13 @@ class ProductController extends Controller
 
         $product->update([
             'nama_produk' => $request->nama_produk,
-            'varietas' => $request->varietas,
+            'jenis_beras' => $request->varietas,
             'kualitas' => $request->kualitas,
-            'harga_per_kg' => $request->harga_per_kg,
+            'harga' => $request->harga_per_kg,
             'id_petani' => $request->id_petani,
+            'nama_petani' => User::find($request->id_petani)->nama ?? 'Unknown',
             'lokasi_gudang' => $request->lokasi_gudang,
-            'stok_kg' => $request->stok_kg,
+            'stok' => $request->stok_kg,
             'deskripsi' => $request->deskripsi,
         ]);
 

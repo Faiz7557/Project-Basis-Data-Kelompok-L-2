@@ -43,11 +43,11 @@
                             </td>
                             <td>
                                 <div class="fw-semibold">{{ $product->nama_produk }}</div>
-                                <small class="text-muted">{{ $product->varietas }} - {{ $product->kualitas }}</small>
+                                <small class="text-muted">{{ $product->jenis_beras }} - {{ $product->kualitas }}</small>
                             </td>
-                            <td>{{ $product->petani->nama ?? 'Unknown' }}</td>
-                            <td>Rp {{ number_format($product->harga_per_kg, 0, ',', '.') }}</td>
-                            <td>{{ $product->stok_kg }} Kg</td>
+                            <td>{{ $product->petani->nama ?? $product->nama_petani ?? 'Unknown' }}</td>
+                            <td>Rp {{ number_format($product->harga, 0, ',', '.') }}</td>
+                            <td>{{ $product->stok }} Kg</td>
                             <td>{{ $product->lokasi_gudang }}</td>
                             <td>
                                 <div class="btn-group btn-group-sm">

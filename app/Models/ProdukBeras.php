@@ -19,6 +19,7 @@ class ProdukBeras extends Model {
     protected $fillable = [
         'nama_produk',
         'jenis_beras',
+        'kualitas',
         'harga',
         'nama_petani',
         'lokasi_gudang',

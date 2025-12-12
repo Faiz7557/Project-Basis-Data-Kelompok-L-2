@@ -33,7 +33,7 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Varietas</label>
-                                <input type="text" name="varietas" class="form-control @error('varietas') is-invalid @enderror" value="{{ old('varietas', $product->varietas) }}" required>
+                                <input type="text" name="varietas" class="form-control @error('varietas') is-invalid @enderror" value="{{ old('varietas', $product->jenis_beras) }}" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Kualitas</label>
@@ -49,11 +49,11 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Price per Kg (Rp)</label>
-                                <input type="number" name="harga_per_kg" class="form-control @error('harga_per_kg') is-invalid @enderror" value="{{ old('harga_per_kg', $product->harga_per_kg) }}" min="0" required>
+                                <input type="number" name="harga_per_kg" class="form-control @error('harga_per_kg') is-invalid @enderror" value="{{ old('harga_per_kg', $product->harga) }}" min="0" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Stock (Kg)</label>
-                                <input type="number" name="stok_kg" class="form-control @error('stok_kg') is-invalid @enderror" value="{{ old('stok_kg', $product->stok_kg) }}" min="1" required>
+                                <input type="number" name="stok_kg" class="form-control @error('stok_kg') is-invalid @enderror" value="{{ old('stok_kg', $product->stok) }}" min="1" required>
                             </div>
                         </div>
 
