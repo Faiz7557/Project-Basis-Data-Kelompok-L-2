@@ -37,6 +37,14 @@ Route::get('/contact-us', function () {
     return view('contact-us');
 })->name('contact-us');
 
+// Admin Routes
+Route::prefix('admin')->middleware(['auth', 'role:admin'])->name('admin.')->group(function () {
+    Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
+    Route::resource('users', \App\Http\Controllers\Admin\UserController::class);
+    Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
+    Route::resource('transactions', \App\Http\Controllers\Admin\TransactionController::class)->only(['index', 'show', 'update']);
+});
+
 
 /*
 |--------------------------------------------------------------------------

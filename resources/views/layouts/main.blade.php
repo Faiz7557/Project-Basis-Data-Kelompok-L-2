@@ -635,7 +635,10 @@
         <div class="sidebar" id="sidebar">
             <div class="logo">
                 @auth
-                    @if(Auth::user()->peran == 'petani')
+                    @if(Auth::user()->peran == 'admin')
+                        <img src="{{ asset('images/logo default.png') }}" alt="Logo Admin">
+                        <span>ADMIN</span>
+                     @elseif(Auth::user()->peran == 'petani')
                         <img src="{{ asset('images/logo petani.png') }}" alt="Logo Petani">
                         <span>PETANI</span>
                     @elseif(Auth::user()->peran == 'pengepul')
@@ -660,7 +663,14 @@
 
             <h4>Dashboard</h4>
             <ul>
-                <li><a href="{{ route('dashboard') }}" class="active"><i class="fas fa-th-large"></i> Dashboard</a></li>
+                @if(Auth::check() && Auth::user()->peran == 'admin')
+                    <li><a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}"><i class="fas fa-th-large"></i> Dashboard Admin</a></li>
+                    <li><a href="{{ route('admin.users.index') }}" class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}"><i class="fas fa-users"></i> Users</a></li>
+                    <li><a href="{{ route('admin.products.index') }}" class="{{ request()->routeIs('admin.products.*') ? 'active' : '' }}"><i class="fas fa-box"></i> Products</a></li>
+                    <li><a href="{{ route('admin.transactions.index') }}" class="{{ request()->routeIs('admin.transactions.*') ? 'active' : '' }}"><i class="fas fa-exchange-alt"></i> Transactions</a></li>
+                @else
+                    <li><a href="{{ route('dashboard') }}" class="active"><i class="fas fa-th-large"></i> Dashboard</a></li>
+                @endif
             </ul>
 
             <h4>List Menu</h4>
