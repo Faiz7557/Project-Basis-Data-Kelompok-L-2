@@ -160,14 +160,14 @@
 
         <!-- Negotiation Status Table -->
         <div class="col-lg-4">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="bi bi-chat-dots me-2"></i>Status Negosiasi</h5>
+            <div class="card h-100 border-0 shadow-sm rounded-4 text-white" style="background: linear-gradient(135deg, #66bb6a, #43a047);">
+                <div class="card-header border-0 bg-transparent p-4 pb-0">
+                    <h5 class="mb-0 fw-bold"><i class="bi bi-chat-dots me-2"></i>Status Negosiasi</h5>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-4">
                     <div class="table-responsive">
-                        <table class="table align-middle mb-0">
-                            <thead class="text-white-50 small text-uppercase" style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+                        <table class="table table-borderless align-middle mb-0">
+                            <thead class="small text-uppercase text-white-50" style="border-bottom: 1px solid rgba(255,255,255,0.2);">
                                 <tr>
                                     <th class="ps-0">Partner</th>
                                     <th>Jml (Kg)</th>
@@ -179,32 +179,40 @@
                                     <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
                                         <td class="ps-0 py-3">
                                             <div class="d-flex align-items-center">
-                                                <div class="bg-white rounded-circle p-2 me-2 text-primary">
-                                                    <i class="bi bi-person-fill"></i>
+                                                <div class="bg-white rounded-circle p-2 me-3 text-success d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                    <i class="bi bi-person-fill fs-5"></i>
                                                 </div>
                                                 <div>
-                                                    <span class="d-block fw-bold text-white">{{ $neg->label }}</span>
-                                                    <small class="text-white-50" style="font-size: 0.75rem;">Negosiasi</small>
+                                                    <span class="d-block fw-bold">{{ $neg->label }}</span>
+                                                    <small class="text-white-50" style="font-size: 0.75rem;">{{ $neg->product_name }}</small>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="py-3 fw-medium text-white">{{ number_format($neg->jumlah_kg) }}</td>
+                                        <td class="py-3 fw-medium">{{ number_format($neg->jumlah_kg) }}</td>
                                         <td class="text-end pe-0 py-3">
                                             @php
                                                 $statusClass = match($neg->status) {
                                                     'Menunggu' => 'bg-warning text-dark',
-                                                    'Disetujui' => 'bg-success text-white',
+                                                    'Disetujui' => 'bg-white text-success',
                                                     'Ditolak' => 'bg-danger text-white',
                                                     default => 'bg-secondary text-white'
                                                 };
+                                                $iconStatus = match($neg->status) {
+                                                    'Menunggu' => 'bi-hourglass-split',
+                                                    'Disetujui' => 'bi-check-circle-fill',
+                                                    'Ditolak' => 'bi-x-circle-fill',
+                                                    default => 'bi-question-circle'
+                                                };
                                             @endphp
-                                            <span class="badge {{ $statusClass }} rounded-pill px-3 py-2">{{ $neg->status }}</span>
+                                            <span class="badge {{ $statusClass }} rounded-pill px-3 py-2 shadow-sm">
+                                                <i class="bi {{ $iconStatus }} me-1"></i> {{ $neg->status }}
+                                            </span>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
                                         <td colspan="3" class="text-center py-5">
-                                            <div class="text-white-50 opacity-50 mb-2">
+                                            <div class="text-white-50 opacity-50 mb-3">
                                                 <i class="bi bi-inbox fs-1"></i>
                                             </div>
                                             <p class="text-white-50 small mb-0">Tidak ada negosiasi aktif</p>
@@ -215,7 +223,7 @@
                         </table>
                     </div>
                      <div class="mt-4 text-center">
-                        <a href="{{ route('negosiasi.index') }}" class="btn btn-sm btn-light rounded-pill px-4 text-success fw-bold">
+                        <a href="{{ route('negosiasi.index') }}" class="btn btn-sm btn-light rounded-pill px-4 text-success fw-bold shadow-sm hover-scale">
                             Lihat Semua <i class="bi bi-arrow-right ms-1"></i>
                         </a>
                     </div>

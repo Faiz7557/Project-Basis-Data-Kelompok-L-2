@@ -39,7 +39,7 @@ class DashboardController extends Controller {
                       ->orWhere('id_pembeli', $user->id_user);
                 })
                 ->whereDate('updated_at', $today)
-                ->whereIn('status_transaksi', ['disetujui', 'completed'])
+                ->whereIn('status_transaksi', ['disetujui', 'completed', 'confirmed'])
                 ->get()
                 ->reduce(function($carry, $t) use ($user) {
                     $isSale = $t->id_penjual == $user->id_user;
@@ -57,10 +57,10 @@ class DashboardController extends Controller {
                 }, ['income'=>0, 'expense'=>0, 'kg_sold'=>0, 'kg_bought'=>0, 'tx_count'=>0]);
 
             // C. Combine
-            $totalIncome = ($history->income ?? 0) + $todayMetrics['income'];
-            $totalExpense = ($history->expense ?? 0) + $todayMetrics['expense'];
-            $totalKgSold = ($history->kg_sold ?? 0) + $todayMetrics['kg_sold'];
-            $totalKgBought = ($history->kg_bought ?? 0) + $todayMetrics['kg_bought'];
+            $totalIncome = (optional($history)->income ?? 0) + $todayMetrics['income'];
+            $totalExpense = (optional($history)->expense ?? 0) + $todayMetrics['expense'];
+            $totalKgSold = (optional($history)->kg_sold ?? 0) + $todayMetrics['kg_sold'];
+            $totalKgBought = (optional($history)->kg_bought ?? 0) + $todayMetrics['kg_bought'];
 
 
             // --- 2. RECENT ACTIVITY FEED (Realtime, Limit 5) ---
@@ -156,7 +156,7 @@ class DashboardController extends Controller {
             if ($user->peran === 'admin') {
                 // GMV (Gross Merchandise Value) - Total Money Flow
                 $adminStats['gmv'] = FactUserDailyMetric::sum('total_income') 
-                    + Transaksi::whereDate('updated_at', $today)->where('status_transaksi', 'completed')->sum(DB::raw('harga_akhir * jumlah'));
+                    + Transaksi::whereDate('updated_at', $today)->whereIn('status_transaksi', ['disetujui', 'completed', 'confirmed'])->sum(DB::raw('harga_akhir * jumlah'));
                 
                 // Total User Base
                 $adminStats['total_users'] = \App\Models\User::count();
@@ -174,23 +174,22 @@ class DashboardController extends Controller {
                 default => 'dashboard',
             };
 
-            return view($view, compact(
-                'saldo',
-                'activities',
-                'inventoryKg',
-                'inventoryTon',
-                'capacityKg',
-                'capacityPercent',
-                'negotiationsSummary',
-                'lastUpdate',
-                'totalIncome',
-                'totalExpense',
-                'totalKgSold',
-                'totalKgBought'
-            ) + [
-                'stokBeras' => $inventoryKg,
-                'negotiationsCount' => $negotiationsSummary->where('status', 'Dalam Proses')->count(),
-                'adminStats' => $adminStats // Pass admin stats
+            return view($view, [
+                'saldo' => $saldo ?? 0,
+                'activities' => $activities ?? collect(),
+                'inventoryKg' => $inventoryKg ?? 0,
+                'inventoryTon' => $inventoryTon ?? 0,
+                'capacityKg' => $capacityKg ?? 10000,
+                'capacityPercent' => $capacityPercent ?? 0,
+                'negotiationsSummary' => $negotiationsSummary ?? collect(),
+                'lastUpdate' => $lastUpdate ?? now(),
+                'totalIncome' => $totalIncome ?? 0,
+                'totalExpense' => $totalExpense ?? 0,
+                'totalKgSold' => $totalKgSold ?? 0,
+                'totalKgBought' => $totalKgBought ?? 0,
+                'stokBeras' => $inventoryKg ?? 0,
+                'negotiationsCount' => isset($negotiationsSummary) ? $negotiationsSummary->where('status', 'Dalam Proses')->count() : 0,
+                'adminStats' => $adminStats ?? [] 
             ]);
             
         } catch (\Throwable $e) {
@@ -211,5 +210,22 @@ class DashboardController extends Controller {
                 'totalKgBought'=>0
             ]);
         }
+    }
+    public function data() {
+        // Simple API for Admin Dashboard Debugging
+        if (auth()->user()->peran !== 'admin') {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $today = now()->toDateString();
+        $stats = [
+            'gmv' => FactUserDailyMetric::sum('total_income') + Transaksi::whereDate('updated_at', $today)->whereIn('status_transaksi', ['disetujui', 'completed', 'confirmed'])->sum(DB::raw('harga_akhir * jumlah')),
+            'total_users' => \App\Models\User::count(),
+            'total_tx_today' => Transaksi::whereDate('updated_at', $today)->count(),
+            'pending_nego' => \App\Models\Negosiasi::where('status', 'Menunggu')->count(),
+            'server_time' => now()->toDateTimeString(),
+        ];
+
+        return response()->json($stats);
     }
 }

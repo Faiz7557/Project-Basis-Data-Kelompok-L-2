@@ -56,11 +56,11 @@ class GenerateDashboardFacts extends Command
         // Kita cari transaksi yang 'disetujui' atau 'completed'
         // Baik sebagai penjual atau pembeli
         $activeUserIds = Transaksi::whereDate('updated_at', $dateStr)
-            ->whereIn('status_transaksi', ['disetujui', 'completed'])
+            ->whereIn('status_transaksi', ['disetujui', 'completed', 'confirmed'])
             ->pluck('id_penjual')
             ->concat(
                 Transaksi::whereDate('updated_at', $dateStr)
-                ->whereIn('status_transaksi', ['disetujui', 'completed'])
+                ->whereIn('status_transaksi', ['disetujui', 'completed', 'confirmed'])
                 ->pluck('id_pembeli')
             )
             ->unique()
@@ -83,7 +83,7 @@ class GenerateDashboardFacts extends Command
         // 1. Total Income (Sebagai Penjual)
         $income = Transaksi::where('id_penjual', $user->id_user)
             ->whereDate('updated_at', $dateStr)
-            ->whereIn('status_transaksi', ['disetujui', 'completed'])
+            ->whereIn('status_transaksi', ['disetujui', 'completed', 'confirmed'])
             ->get()
             ->sum(function($t) {
                 return ($t->harga_akhir ?? $t->harga_awalan ?? 0) * $t->jumlah;
@@ -92,7 +92,7 @@ class GenerateDashboardFacts extends Command
         // 2. Total Expense (Sebagai Pembeli)
         $expense = Transaksi::where('id_pembeli', $user->id_user)
             ->whereDate('updated_at', $dateStr)
-            ->whereIn('status_transaksi', ['disetujui', 'completed'])
+            ->whereIn('status_transaksi', ['disetujui', 'completed', 'confirmed'])
             ->get()
             ->sum(function($t) {
                 return ($t->harga_akhir ?? $t->harga_awalan ?? 0) * $t->jumlah;
@@ -101,13 +101,13 @@ class GenerateDashboardFacts extends Command
         // 3. Kg Sold
         $kgSold = Transaksi::where('id_penjual', $user->id_user)
             ->whereDate('updated_at', $dateStr)
-            ->whereIn('status_transaksi', ['disetujui', 'completed'])
+            ->whereIn('status_transaksi', ['disetujui', 'completed', 'confirmed'])
             ->sum('jumlah');
             
         // 4. Kg Bought
         $kgBought = Transaksi::where('id_pembeli', $user->id_user)
             ->whereDate('updated_at', $dateStr)
-            ->whereIn('status_transaksi', ['disetujui', 'completed'])
+            ->whereIn('status_transaksi', ['disetujui', 'completed', 'confirmed'])
             ->sum('jumlah');
             
         // 5. Transaction Count
@@ -116,7 +116,7 @@ class GenerateDashboardFacts extends Command
                   ->orWhere('id_pembeli', $user->id_user);
             })
             ->whereDate('updated_at', $dateStr)
-            ->whereIn('status_transaksi', ['disetujui', 'completed'])
+            ->whereIn('status_transaksi', ['disetujui', 'completed', 'confirmed'])
             ->count();
             
         // Load into Data Warehouse (Fact Table)
