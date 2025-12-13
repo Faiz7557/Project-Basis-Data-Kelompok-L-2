@@ -151,7 +151,21 @@ class DashboardController extends Controller {
                     ];
                 });
 
-            $lastUpdate = now();
+            // --- ADMIN SPECIAL LOGIC (GLOBAL STATS) ---
+            $adminStats = [];
+            if ($user->peran === 'admin') {
+                // GMV (Gross Merchandise Value) - Total Money Flow
+                $adminStats['gmv'] = FactUserDailyMetric::sum('total_income') 
+                    + Transaksi::whereDate('updated_at', $today)->where('status_transaksi', 'completed')->sum(DB::raw('harga_akhir * jumlah'));
+                
+                // Total User Base
+                $adminStats['total_users'] = \App\Models\User::count();
+                $adminStats['new_users_today'] = \App\Models\User::whereDate('created_at', $today)->count();
+                
+                // System Health - Active Transactions Today
+                $adminStats['total_tx_today'] = Transaksi::whereDate('updated_at', $today)->count();
+                $adminStats['pending_nego'] = \App\Models\Negosiasi::where('status', 'Menunggu')->count();
+            }
 
             $view = match ($user->peran) {
                 'admin' => 'admin.dashboard',
@@ -175,13 +189,27 @@ class DashboardController extends Controller {
                 'totalKgBought'
             ) + [
                 'stokBeras' => $inventoryKg,
-                'negotiationsCount' => $negotiationsSummary->where('status', 'Dalam Proses')->count()
+                'negotiationsCount' => $negotiationsSummary->where('status', 'Dalam Proses')->count(),
+                'adminStats' => $adminStats // Pass admin stats
             ]);
             
         } catch (\Throwable $e) {
             Log::error('Dashboard index error: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
             // Fallback empty view on error
-            return view('dashboard', ['saldo'=>0, 'activities'=>collect(), 'inventoryKg'=>0]); 
+            return view('dashboard', [
+                'saldo'=>0, 
+                'activities'=>collect(), 
+                'inventoryKg'=>0,
+                'inventoryTon'=>0,
+                'capacityKg'=>10000,
+                'capacityPercent'=>0,
+                'negotiationsSummary'=>collect(),
+                'lastUpdate'=>now(),
+                'totalIncome'=>0,
+                'totalExpense'=>0,
+                'totalKgSold'=>0,
+                'totalKgBought'=>0
+            ]);
         }
     }
 }

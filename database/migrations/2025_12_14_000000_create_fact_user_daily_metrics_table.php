@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Pastikan menggunakan koneksi dashboard
-        Schema::connection('mysql_dashboard')->create('fact_user_daily_metrics', function (Blueprint $table) {
+        // Pastikan menggunakan koneksi default
+        Schema::create('fact_user_daily_metrics', function (Blueprint $table) {
             $table->id();
             $table->date('date');
             $table->unsignedBigInteger('user_id'); // Referensi logis ke DB utama
@@ -38,6 +38,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::connection('mysql_dashboard')->dropIfExists('fact_user_daily_metrics');
+        Schema::dropIfExists('fact_user_daily_metrics');
     }
 };

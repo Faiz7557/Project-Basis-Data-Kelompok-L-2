@@ -12,6 +12,7 @@ use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\NegosiasiController;
 use App\Http\Controllers\TopUpController;
 use App\Http\Controllers\DistributorController;
+use App\Http\Controllers\NotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -53,6 +54,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/saldo/topup', [SettingsController::class, 'topupStore'])->name('saldo.topup.store');
     Route::post('/saldo/topup/{id}/confirm', [SettingsController::class, 'topupConfirm'])->name('saldo.topup.confirm');
     Route::get('/ewallet', [SettingsController::class, 'ewallet'])->name('ewallet');
+    Route::post('/ewallet', [SettingsController::class, 'updateEwallet'])->name('ewallet.update');
 
     // Common Features
     Route::resource('distributor', DistributorController::class); // Assuming common or specific role needed
@@ -61,6 +63,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Transaksi (General)
     Route::resource('transaksi', TransaksiController::class);
     Route::get('/transaksi/notifications', [TransaksiController::class, 'notifications'])->name('transaksi.notifications');
+
+    // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+
+    // Reporting
+    Route::get('/report/export/pdf', [App\Http\Controllers\ReportController::class, 'exportPdf'])->name('report.export.pdf');
+    Route::get('/report/export/csv', [App\Http\Controllers\ReportController::class, 'exportCsv'])->name('report.export.csv');
 
     // Pasar (General View)
     Route::get('/pasar', [PasarController::class, 'index'])->name('pasar.index');

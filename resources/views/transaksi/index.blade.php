@@ -7,7 +7,16 @@
             <div class="card shadow-lg border-0">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 fw-bold text-white"><i class="bi bi-receipt me-2"></i>Aktivitas Transaksi</h5>
-                    <div class="d-flex align-items-center">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-light btn-sm dropdown-toggle fw-bold text-success shadow-sm" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-download me-1"></i> Export
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ route('report.export.pdf') }}"><i class="bi bi-file-pdf me-2 text-danger"></i>Download PDF</a></li>
+                                <li><a class="dropdown-item" href="{{ route('report.export.csv') }}"><i class="bi bi-file-earmark-spreadsheet me-2 text-success"></i>Download CSV</a></li>
+                            </ul>
+                        </div>
                         <span class="badge bg-white text-warning rounded-pill px-3 py-2 shadow-sm">
                             <i class="bi bi-file-earmark-text me-1"></i> Total: {{ $activities->total() ?? $activities->count() }}
                         </span>

@@ -57,7 +57,7 @@ class TransaksiController extends Controller
     public function approve(Transaksi $transaksi)
     {
         $seller = Auth::user();
-        if ($transaksi->id_penjual !== $seller->id_user) { abort(403); }
+        if ((int)$transaksi->id_penjual !== (int)$seller->id_user) { abort(403); }
 
         DB::beginTransaction();
         try {
@@ -98,7 +98,7 @@ class TransaksiController extends Controller
     public function reject(Transaksi $transaksi)
     {
         $seller = Auth::user();
-        if ($transaksi->id_penjual !== $seller->id_user) { abort(403); }
+        if ((int)$transaksi->id_penjual !== (int)$seller->id_user) { abort(403); }
 
         DB::beginTransaction();
         try {
@@ -147,7 +147,7 @@ class TransaksiController extends Controller
     public function history(Transaksi $transaksi)
     {
         $user = Auth::user();
-        if ($transaksi->id_penjual !== $user->id_user && $transaksi->id_pembeli !== $user->id_user) {
+        if ((int)$transaksi->id_penjual !== (int)$user->id_user && (int)$transaksi->id_pembeli !== (int)$user->id_user) {
             abort(403);
         }
 

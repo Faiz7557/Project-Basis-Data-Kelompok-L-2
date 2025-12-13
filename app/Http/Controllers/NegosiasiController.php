@@ -9,6 +9,8 @@ use App\Models\Transaksi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\OfferCreated;
 
 class NegosiasiController extends Controller
 {
@@ -57,7 +59,7 @@ class NegosiasiController extends Controller
         ]);
         
         // Buat negosiasi baru
-        Negosiasi::create([
+        $negosiasi = Negosiasi::create([
             'id_produk' => $produk->id_produk, // Fix: id -> id_produk if model uses id_produk
             'id_pengepul' => Auth::id(),
             'id_petani' => $produk->id_petani,
@@ -67,6 +69,12 @@ class NegosiasiController extends Controller
             'pesan' => $request->pesan,
             'status' => 'dalam_proses',
         ]);
+
+        // Kirim Notifikasi ke Petani
+        $petani = User::find($produk->id_petani);
+        if ($petani) {
+            Notification::send($petani, new OfferCreated($negosiasi));
+        }
         
         return redirect()->route('negosiasi.index')
             ->with('success', 'Penawaran berhasil diajukan');
@@ -78,7 +86,7 @@ class NegosiasiController extends Controller
         
         // Cek apakah user adalah pihak dalam negosiasi
         $user = Auth::user();
-        if ($user->id_user !== $negosiasi->id_petani && $user->id_user !== $negosiasi->id_pengepul) {
+        if ((int)$user->id_user !== (int)$negosiasi->id_petani && (int)$user->id_user !== (int)$negosiasi->id_pengepul) {
             return redirect()->route('negosiasi.index')
                 ->with('error', 'Anda tidak memiliki akses untuk melihat negosiasi ini');
         }
@@ -89,7 +97,7 @@ class NegosiasiController extends Controller
     public function accept(Negosiasi $negosiasi)
     {
         // Hanya petani yang bisa menerima negosiasi
-        if (Auth::id() !== $negosiasi->id_petani) {
+        if ((int)Auth::id() !== (int)$negosiasi->id_petani) {
             return redirect()->route('negosiasi.index')
                 ->with('error', 'Hanya petani yang dapat menerima negosiasi');
         }
@@ -171,7 +179,7 @@ class NegosiasiController extends Controller
     public function reject(Negosiasi $negosiasi)
     {
         // Hanya petani yang bisa menolak negosiasi
-        if (Auth::id() !== $negosiasi->id_petani) {
+        if ((int)Auth::id() !== (int)$negosiasi->id_petani) {
             return redirect()->route('negosiasi.index')
                 ->with('error', 'Hanya petani yang dapat menolak negosiasi');
         }
