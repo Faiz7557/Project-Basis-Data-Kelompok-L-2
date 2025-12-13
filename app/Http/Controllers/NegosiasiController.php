@@ -52,17 +52,17 @@ class NegosiasiController extends Controller
         // Validasi request
         $request->validate([
             'harga_penawaran' => 'required|numeric|min:1',
-            'jumlah_kg' => 'required|integer|min:1|max:' . $produk->stok_kg,
+            'jumlah_kg' => 'required|integer|min:1|max:' . $produk->stok, // Fix: stok_kg -> stok
             'pesan' => 'nullable|string',
         ]);
         
         // Buat negosiasi baru
         Negosiasi::create([
-            'id_produk' => $produk->id,
+            'id_produk' => $produk->id_produk, // Fix: id -> id_produk if model uses id_produk
             'id_pengepul' => Auth::id(),
             'id_petani' => $produk->id_petani,
             'harga_penawaran' => $request->harga_penawaran,
-            'harga_awal' => $produk->harga_per_kg,
+            'harga_awal' => $produk->harga, // Fix: harga_per_kg -> harga
             'jumlah_kg' => $request->jumlah_kg,
             'pesan' => $request->pesan,
             'status' => 'dalam_proses',
@@ -102,9 +102,9 @@ class NegosiasiController extends Controller
         
         // Cek stok produk
         $produk = $negosiasi->produk;
-        if ($produk->stok_kg < $negosiasi->jumlah_kg) {
+        if ($produk->stok < $negosiasi->jumlah_kg) {
             return redirect()->route('negosiasi.show', $negosiasi)
-                ->with('error', 'Stok produk tidak mencukupi');
+                ->with('error', 'Stok produk tidak mencukupi untuk memenuhi negosiasi ini.');
         }
 
         // Cek saldo pembeli (pengepul)
@@ -113,7 +113,7 @@ class NegosiasiController extends Controller
 
         if (!$buyer || $buyer->saldo < $totalHarga) {
             return redirect()->route('negosiasi.show', $negosiasi)
-                ->with('error', 'Saldo pembeli tidak mencukupi untuk transaksi ini');
+                ->with('error', 'Saldo pembeli sudah tidak mencukupi untuk transaksi ini.');
         }
         
         DB::beginTransaction();
@@ -122,7 +122,7 @@ class NegosiasiController extends Controller
             $negosiasi->update(['status' => 'diterima']);
             
             // Kurangi stok produk
-            $produk->decrement('stok_kg', $negosiasi->jumlah_kg);
+            $produk->decrement('stok', $negosiasi->jumlah_kg);
 
             // Proses Keuangan
             // 1. Kurangi saldo pembeli
@@ -150,8 +150,8 @@ class NegosiasiController extends Controller
                 'harga_awalan' => $negosiasi->harga_awal,
                 'harga_akhir' => $negosiasi->harga_penawaran, // Harga deal
                 'tanggal' => now(),
-                'jenis_transaksi' => 'jual', // Petani menjual
-                'status_transaksi' => 'disetujui', // Langsung sukses
+                'jenis_transaksi' => 'jual', 
+                'status_transaksi' => 'disetujui', 
                 'type' => 'purchase',
                 'description' => 'Pembelian produk melalui negosiasi (Diterima)',
                 'user_id' => $buyer->id_user,

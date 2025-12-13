@@ -15,6 +15,38 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+
+                    @if(Auth::user()->peran == 'petani')
+                        <x-nav-link :href="route('market.create')" :active="request()->routeIs('market.create')">
+                            {{ __('Jual Beras') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('transaksi.index')" :active="request()->routeIs('transaksi.*')">
+                            {{ __('Penjualan') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('inventory.index')" :active="request()->routeIs('inventory.*')">
+                            {{ __('Stok') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('negosiasi.index')" :active="request()->routeIs('negosiasi.*')">
+                            {{ __('Negosiasi') }}
+                        </x-nav-link>
+                    @elseif(Auth::user()->peran == 'pengepul')
+                        <x-nav-link :href="route('pasar.index')" :active="request()->routeIs('pasar.index')">
+                            {{ __('Pasar') }}
+                        </x-nav-link>
+                         <x-nav-link :href="route('negosiasi.index')" :active="request()->routeIs('negosiasi.*')">
+                            {{ __('Negosiasi') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('transaksi.index')" :active="request()->routeIs('transaksi.*')">
+                            {{ __('Riwayat Beli') }}
+                        </x-nav-link>
+                         <x-nav-link :href="route('inventory.index')" :active="request()->routeIs('inventory.*')">
+                            {{ __('Gudang') }}
+                        </x-nav-link>
+                    @elseif(Auth::user()->peran == 'admin')
+                         <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
+                            {{ __('Admin Panel') }}
+                        </x-nav-link>
+                    @endif
                 </div>
             </div>
 
