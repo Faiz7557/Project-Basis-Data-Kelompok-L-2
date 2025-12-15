@@ -18,6 +18,7 @@
                 <button class="btn btn-light text-success fw-bold btn-lg rounded-pill px-4 shadow-sm hover-scale" onclick="window.location.reload()">
                     <i class="bi bi-arrow-clockwise me-2"></i> Live Refresh
                 </button>
+
             </div>
         </div>
     </div>
@@ -209,6 +210,9 @@
                                 @endforelse
                             </tbody>
                         </table>
+                        <div class="text-center mt-3 p-3 bg-light rounded-3">
+                             <small class="text-muted">Fitur manajemen user lengkap tersedia di menu "Users"</small>
+                        </div>
                     </div>
                 </div>
             </div>

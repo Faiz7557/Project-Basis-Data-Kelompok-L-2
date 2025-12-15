@@ -394,7 +394,6 @@
             volumeChart = new ApexCharts(document.querySelector("#volumeChart"), volumeOptions);
             volumeChart.render();
         }
-        }
     });
 
     async function updateChartFilter(btn, range) {
