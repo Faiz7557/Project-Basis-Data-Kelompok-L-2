@@ -282,8 +282,10 @@
         
         .logo {
             display: flex;
+            flex-direction: column; /* Stack vertical */
             align-items: center;
-            padding: 0 1.5rem 1.5rem;
+            justify-content: center;
+            padding: 1.5rem;
             border-bottom: 1px solid rgba(0,0,0,0.05); /* Subtle border */
             margin-bottom: 2rem;
             background: transparent;
@@ -291,10 +293,11 @@
         }
         
         .logo img {
-            width: 45px;
-            height: 45px;
-            margin-right: 12px;
-            border-radius: 10px;
+            width: 60px; /* Slightly larger for proportion */
+            height: 60px;
+            margin-right: 0;
+            margin-bottom: 12px; /* Space between logo and text */
+            border-radius: 12px;
             box-shadow: var(--shadow-sm);
         }
         
@@ -713,7 +716,7 @@
             <div class="logo">
                 @auth
                     @if(Auth::user()->peran == 'admin')
-                        <img src="{{ asset('images/logo default.png') }}" alt="Logo Admin">
+                        {{-- Logo removed for admin --}}
                         <span>ADMIN</span>
                      @elseif(Auth::user()->peran == 'petani')
                         <img src="{{ asset('images/logo petani.png') }}" alt="Logo Petani">
@@ -757,17 +760,21 @@
                 @elseif(Auth::check() && Auth::user()->peran == 'pengepul')
                     <li><a href="{{ route('market.index') }}" class="{{ request()->routeIs('market.index') ? 'active' : '' }}"><i class="fas fa-shopping-basket"></i> Pasar Beras</a></li>
                 @endif
-                <li><a href="{{ route('saldo') }}" class="{{ request()->routeIs('saldo') ? 'active' : '' }}"><i class="fas fa-coins"></i> Saldo</a></li>
-                <li><a href="{{ route('transaksi.index') }}" class="{{ request()->routeIs('transaksi.*') ? 'active' : '' }}"><i class="fas fa-exchange-alt"></i> Aktivitas Transaksi</a></li>
-                <li><a href="{{ route('negosiasi.index') }}" class="{{ request()->routeIs('negosiasi.*') ? 'active' : '' }}"><i class="fas fa-comments"></i> Status Negosiasi</a></li>
-                <li><a href="{{ route('inventory.index') }}" class="{{ request()->routeIs('inventory.*') ? 'active' : '' }}"><i class="fas fa-boxes"></i> Inventaris</a></li>
+                @if(Auth::user()->peran !== 'admin')
+                    <li><a href="{{ route('saldo') }}" class="{{ request()->routeIs('saldo') ? 'active' : '' }}"><i class="fas fa-coins"></i> Saldo</a></li>
+                    <li><a href="{{ route('transaksi.index') }}" class="{{ request()->routeIs('transaksi.*') ? 'active' : '' }}"><i class="fas fa-exchange-alt"></i> Aktivitas Transaksi</a></li>
+                    <li><a href="{{ route('negosiasi.index') }}" class="{{ request()->routeIs('negosiasi.*') ? 'active' : '' }}"><i class="fas fa-comments"></i> Status Negosiasi</a></li>
+                    <li><a href="{{ route('inventory.index') }}" class="{{ request()->routeIs('inventory.*') ? 'active' : '' }}"><i class="fas fa-boxes"></i> Inventaris</a></li>
+                @endif
             </ul>
 
             <h4>Setting</h4>
             <ul>
                 <li><a href="{{ route('settings.index') }}" class="{{ request()->routeIs('settings.*') ? 'active' : '' }}"><i class="fas fa-user-cog"></i> Pengaturan Akun</a></li>
-                <li><a href="{{ route('ewallet') }}" class="{{ request()->routeIs('ewallet') ? 'active' : '' }}"><i class="fas fa-wallet"></i> Pengaturan E-Wallet</a></li>
-                <li><a href="{{ route('topup.index') }}" class="{{ request()->routeIs('topup.*') ? 'active' : '' }}"><i class="fas fa-wallet"></i> Top-up Saldo</a></li>
+                @if(Auth::user()->peran !== 'admin')
+                    <li><a href="{{ route('ewallet') }}" class="{{ request()->routeIs('ewallet') ? 'active' : '' }}"><i class="fas fa-wallet"></i> Pengaturan E-Wallet</a></li>
+                    <li><a href="{{ route('topup.index') }}" class="{{ request()->routeIs('topup.*') ? 'active' : '' }}"><i class="fas fa-wallet"></i> Top-up Saldo</a></li>
+                @endif
             </ul>
 
             <div class="logout-container">
