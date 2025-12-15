@@ -282,8 +282,10 @@
         
         .logo {
             display: flex;
+            flex-direction: column; /* Stack vertical */
             align-items: center;
-            padding: 0 1.5rem 1.5rem;
+            justify-content: center;
+            padding: 1.5rem;
             border-bottom: 1px solid rgba(0,0,0,0.05); /* Subtle border */
             margin-bottom: 2rem;
             background: transparent;
@@ -291,10 +293,11 @@
         }
         
         .logo img {
-            width: 45px;
-            height: 45px;
-            margin-right: 12px;
-            border-radius: 10px;
+            width: 60px; /* Slightly larger for proportion */
+            height: 60px;
+            margin-right: 0;
+            margin-bottom: 12px; /* Space between logo and text */
+            border-radius: 12px;
             box-shadow: var(--shadow-sm);
         }
         
@@ -713,7 +716,7 @@
             <div class="logo">
                 @auth
                     @if(Auth::user()->peran == 'admin')
-                        <img src="{{ asset('images/logo default.png') }}" alt="Logo Admin">
+                        {{-- Logo removed for admin --}}
                         <span>ADMIN</span>
                      @elseif(Auth::user()->peran == 'petani')
                         <img src="{{ asset('images/logo petani.png') }}" alt="Logo Petani">

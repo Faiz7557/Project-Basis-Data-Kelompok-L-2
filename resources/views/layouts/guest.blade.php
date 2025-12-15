@@ -28,137 +28,67 @@
         }
         
         body {
-            background-image: url('{{ asset('images/Background.png') }}');
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            color: #333;
+            /* Background handled in welcome.blade.php for specific sections or here globally */
+            margin: 0;
+            padding: 0;
             font-family: 'Poppins', sans-serif;
-            padding-top: 30px;
+            overflow-x: hidden;
+            background-color: #f8f9fa;
         }
         
-        /* Navbar Upgrade: Glassmorphism dengan animasi dan scroll effect */
+        /* Navbar Upgrade: Brighter Glassmorphism independent of scroll */
+        /* Navbar Upgrade: Brighter Glassmorphism independent of scroll */
         .navbar {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--glass-border);
-            padding: 1rem 0;
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow-light);
+            background: rgba(255, 255, 255, 0.7); /* Translucent again for glassmorph */
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.5);
+            padding: 1.5rem 0;
+            transition: all 0.4s ease;
             position: fixed;
             top: 0;
             width: 100%;
             z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
         }
         
         .navbar.scrolled {
-            background: rgba(255, 255, 255, 0.4);
-            padding: 0.5rem 0;
-            box-shadow: var(--shadow-heavy);
+            padding: 1.2rem 0; /* Still substantial on scroll */
+            box-shadow: 0 4px 25px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.98);
+        }
+
+        /* Force Nav Links to be Dark Green/Black for readability on the bright glass */
+        .navbar .nav-link {
+            color: #1a1a1a !important; /* Almost black for max contrast */
+            font-weight: 700; /* Bolder text */
+            margin: 0 20px; /* More spacing */
+            transition: all 0.3s ease;
+            font-size: 1.1rem; /* Larger font size */
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        
+        .navbar.scrolled .nav-link {
+            color: #2c3e50 !important;
         }
         
         .navbar-brand img {
-            height: 50px;
-            border-radius: 10px;
-            box-shadow: var(--shadow-light);
+            height: 45px;
             transition: transform 0.3s ease;
-        }
-        
-        .navbar-brand:hover img {
-            transform: scale(1.05);
-        }
-        
-        .nav-link {
-            color: #fff !important;
-            font-weight: 500;
-            margin: 0 15px;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            padding: 0.5rem 1rem !important;
-            border-radius: 25px;
-        }
-        
-        .nav-link::before {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: -100%;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(90deg, var(--primary-green), var(--secondary-green));
-            transition: left 0.3s ease;
-        }
-        
-        .nav-link:hover::before {
-            left: 0;
+            filter: none; /* Always full color */
         }
         
         .nav-link:hover {
+            opacity: 1;
             color: var(--primary-green) !important;
-            transform: translateY(-2px);
-            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-1px);
         }
         
-        /* Tombol Sign Up Upgrade: Gradient, animasi */
-        .btn-signup {
-            background: linear-gradient(135deg, var(--primary-green), var(--secondary-green));
-            border: none;
-            color: #fff;
-            border-radius: 25px;
-            padding: 10px 25px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-            box-shadow: var(--shadow-light);
-            text-decoration: none;
-        }
-        
-        .btn-signup:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(40, 167, 69, 0.3);
-            color: #fff;
-            background: linear-gradient(135deg, var(--secondary-green), var(--primary-green));
-        }
-        
-        /* Tombol Log In Upgrade: Glass border, hover effect */
-        .btn-login {
-            background: transparent;
-            border: 2px solid #fff;
-            color: #fff;
-            border-radius: 25px;
-            padding: 10px 25px;
-            font-weight: 500;
-            margin-left: 10px;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            backdrop-filter: blur(10px);
-        }
-        
-        .btn-login:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: var(--primary-green);
-            color: var(--primary-green);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-light);
-        }
-        
-        /* Navbar Toggler Upgrade */
-        .navbar-toggler {
-            border: none;
-            padding: 0.5rem;
-            border-radius: 50%;
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-        }
-        
-        .navbar-toggler:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: scale(1.1);
+        /* Navbar Toggler - Dark by default now */
+        .navbar-toggler-icon {
+            filter: none; 
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%280, 0, 0, 0.7%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
         }
         
         .navbar-toggler-icon {
@@ -241,9 +171,11 @@
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <a class="navbar-brand fw-bold" href="{{ Auth::check() ? route('dashboard') : '/' }}">
+            
+            <a class="navbar-brand fw-bold {{ (Request::routeIs('login') || Request::routeIs('register')) ? 'd-none' : '' }}" href="{{ Auth::check() ? route('dashboard') : '/' }}">
                 <img src="{{ asset('images/logo.png') }}" alt="Warung Padi Logo">
             </a>
+
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link" href="{{ Auth::check() ? route('dashboard') : route('welcome') }}"><i class="bi bi-house me-1"></i>HOME</a></li>
@@ -279,13 +211,7 @@
                     </div>
                 </div>
                 @else
-                <div class="d-flex">
-                    <a href="{{ route('register') }}" class="btn btn-signup me-2">
-                        <i class="bi bi-person-plus"></i>
-                        Sign up
-                    </a>
-                    <a href="{{ route('login') }}" class="btn btn-login">Log in</a>
-                </div>
+                <!-- Auth buttons removed from navbar -->
                 @endif
             </div>
         </div>
