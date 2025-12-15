@@ -102,6 +102,39 @@
         </div>
     </div>
 
+    <!-- Analytics Charts Row -->
+    <div class="row g-4 mb-4">
+        <!-- GMV Trend Chart -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-0 p-4 pb-0 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0">Tren Gross Merchandise Value (GMV)</h5>
+                    <div class="btn-group" role="group" aria-label="Time Filter">
+                        <button type="button" class="btn btn-outline-secondary btn-sm filter-btn active" data-range="30d" onclick="updateChartFilter(this, '30d')">30 Hari</button>
+                         <button type="button" class="btn btn-outline-secondary btn-sm filter-btn" data-range="24h" onclick="updateChartFilter(this, '24h')">24 Jam</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm filter-btn" data-range="4w" onclick="updateChartFilter(this, '4w')">4 Minggu</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm filter-btn" data-range="12m" onclick="updateChartFilter(this, '12m')">12 Bulan</button>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <div id="gmvChart" style="min-height: 350px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transaction Distribution -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-0 p-4 pb-0">
+                    <h5 class="fw-bold mb-0">Status Transaksi</h5>
+                </div>
+                <div class="card-body p-4 d-flex align-items-center justify-content-center">
+                    <div id="statusChart" class="w-100"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Main Content Row -->
     <div class="row g-4">
         <!-- User Management (Quick View) -->
@@ -233,4 +266,124 @@
     .bg-success-subtle { background-color: rgba(25, 135, 84, 0.1) !important; }
     .hover-bg-light:hover { background-color: #f8f9fa; }
 </style>
+<script>
+    let gmvChart; 
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const chartData = @json($chartData ?? []);
+
+        // 1. GMV Line Chart
+        if (chartData.trend_labels) {
+            const gmvOptions = {
+                series: [{
+                    name: 'GMV (Rp)',
+                    data: chartData.trend_gmv
+                }],
+                chart: {
+                    type: 'area', // Area for nice gradient look
+                    height: 350,
+                    toolbar: { show: false },
+                    fontFamily: 'Inter, sans-serif'
+                },
+                colors: ['#2E7D32'], // Official Green
+                stroke: { curve: 'smooth', width: 2 },
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        shadeIntensity: 1,
+                        opacityFrom: 0.7,
+                        opacityTo: 0.1,
+                    }
+                },
+                xaxis: {
+                    categories: chartData.trend_labels,
+                    axisBorder: { show: false },
+                    axisTicks: { show: false }
+                },
+                yaxis: {
+                    labels: {
+                        formatter: function (value) {
+                            return new Intl.NumberFormat('id-ID', { notation: "compact" }).format(value);
+                        }
+                    }
+                },
+                grid: {
+                    strokeDashArray: 4,
+                },
+                tooltip: { y: { formatter: function (val) { return "Rp " + new Intl.NumberFormat('id-ID').format(val) } } }
+            };
+
+            gmvChart = new ApexCharts(document.querySelector("#gmvChart"), gmvOptions);
+            gmvChart.render();
+        }
+
+        // 2. Status Donut Chart
+        if (chartData.status_distribution) {
+            // Transform associative array to arrays
+            const labels = Object.keys(chartData.status_distribution);
+            const series = Object.values(chartData.status_distribution);
+
+            const statusOptions = {
+                series: series,
+                labels: labels.map(l => l.charAt(0).toUpperCase() + l.slice(1)), 
+                chart: {
+                    type: 'donut',
+                    height: 350,
+                    fontFamily: 'Inter, sans-serif'
+                },
+                colors: ['#FFC107', '#4CAF50', '#2196F3', '#FF5722', '#9E9E9E'], // Colors mapping
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            labels: {
+                                show: true,
+                                total: {
+                                    show: true,
+                                    label: 'Total',
+                                    formatter: function (w) {
+                                        return w.globals.seriesTotals.reduce((a, b) => a + b, 0)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                legend: { position: 'bottom' }
+            };
+
+            const statusChart = new ApexCharts(document.querySelector("#statusChart"), statusOptions);
+            statusChart.render();
+        }
+    });
+    
+    async function updateChartFilter(btn, range) {
+        // UI Update
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active', 'btn-secondary'));
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.add('btn-outline-secondary'));
+        
+        document.querySelectorAll(`button[data-range="${range}"]`).forEach(b => {
+             b.classList.add('active', 'btn-secondary');
+             b.classList.remove('btn-outline-secondary');
+        });
+
+        // Fetch Data
+        try {
+            const response = await fetch(`{{ route('dashboard.chart-data') }}?range=${range}`);
+            const data = await response.json();
+
+            if (gmvChart && data.trend_labels) {
+                gmvChart.updateOptions({
+                    xaxis: { categories: data.trend_labels }
+                });
+                gmvChart.updateSeries([{
+                    name: 'GMV (Rp)',
+                    data: data.trend_gmv
+                }]);
+            }
+        } catch (error) {
+            console.error('Error fetching admin chart data:', error);
+            alert('Gagal memuat data grafik admin.');
+        }
+    }
+</script>
 @endsection

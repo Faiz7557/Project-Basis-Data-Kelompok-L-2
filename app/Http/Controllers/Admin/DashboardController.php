@@ -9,29 +9,21 @@ use App\Models\Transaksi;
 
 use App\Models\FactUserDailyMetric;
 use Illuminate\Support\Facades\DB;
+use App\Services\DashboardService;
 
 class DashboardController extends Controller
 {
+    protected $dashboardService;
+
+    public function __construct(DashboardService $dashboardService)
+    {
+        $this->dashboardService = $dashboardService;
+    }
+
     public function index()
     {
-        $today = now()->toDateString();
-        
-        // Use the same verified logic as the API
-        $gmv = FactUserDailyMetric::sum('total_income') + 
-               Transaksi::whereDate('updated_at', $today)
-                        ->whereIn('status_transaksi', ['disetujui', 'completed', 'confirmed'])
-                        ->sum(DB::raw('harga_akhir * jumlah'));
-
-        $totalTransactions = Transaksi::count();
-
-        // Calculate Admin Stats
-        $adminStats = [
-            'gmv' => $gmv,
-            'total_users' => User::count(),
-            'new_users_today' => User::whereDate('created_at', now())->count(),
-            'total_tx_today' => Transaksi::whereDate('tanggal', now())->count(),
-            'pending_nego' => \App\Models\Negosiasi::where('status', 'Menunggu')->count(),
-        ];
+        $adminStats = $this->dashboardService->getAdminStats();
+        $chartData = $this->dashboardService->getAdminChartData();
 
         // Get recent transactions for the dashboard widget
         $recentTransactions = Transaksi::with(['penjual', 'pembeli'])
@@ -42,11 +34,12 @@ class DashboardController extends Controller
         // Get latest users for the widget
         $latestUsers = User::latest()->take(5)->get();
 
-        // Pass variables to view (totalProducts is just a placeholder for now or can use Pasar count)
+        // Pass variables to view
         $totalUsers = $adminStats['total_users'];
         $totalProducts = Pasar::count(); 
+        $totalTransactions = Transaksi::count();
 
-        return view('admin.dashboard', compact('totalUsers', 'totalProducts', 'totalTransactions', 'recentTransactions', 'latestUsers', 'adminStats'));
+        return view('admin.dashboard', compact('totalUsers', 'totalProducts', 'totalTransactions', 'recentTransactions', 'latestUsers', 'adminStats', 'chartData'));
     }
 
     public function backup()
